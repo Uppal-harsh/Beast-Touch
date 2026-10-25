@@ -2,7 +2,7 @@
 
 ## Purpose and current state
 
-Use the public Finely Crafted investigation as inspiration for a distinct BeastTouch experience. The current `beasttouch/` Next.js app already includes a simplified React Three Fiber court, a 2D sneaker image, three thematic areas, menus and dialogs. Its current behavior does not reproduce the reference's continuous shared camera path, floating 3D shoe, projected hotspots, or lighting pipeline. The three agents below divide future work without treating public production assets as implementation inputs.
+Use the public Finely Crafted investigation as inspiration for a distinct BeastTouch experience. The current `beasttouch/` Next.js app has an original React Three Fiber court and procedural 3D sneaker, three thematic areas, menus and dialogs. The sneaker PNG remains in product dialogs. The initial camera travel and 3D scene are a first pass; projected hotspots, floor reflection, bloom, full route behavior, and visual validation remain future work. The three agents below divide that work without treating public production assets as implementation inputs.
 
 ## Agent 1 — Scene and rendering
 
@@ -18,7 +18,7 @@ Use the public Finely Crafted investigation as inspiration for a distinct BeastT
 
 **Contract with Agent 1:** send scene inputs; consume projected hotspot coordinates and completion events; pause or constrain travel while a menu, dialog, or focused hotspot is active. Keep a single owner for each input and transition. Coordinate any new hotspot data shape before either side changes it.
 
-**Known gaps to resolve when this role begins implementation:** current area navigation jumps between three camera offsets; hotspots sit on a DOM shoe image; sound is a generated drone; saved bag data lacks shape validation; editing a saved pair does not restore its size and color; reduced motion does not stop camera easing. The `.area-meta` GSAP selector currently matches no element.
+**Current state and next gaps:** area navigation now has normalized progress and the bag validates saved data. The detail controls are screen-positioned chips, so projected 3D anchors are still needed. Sound is a generated drone. Routes and a full transition controller remain open work. Check modal focus, touch travel, and reduced motion in a running browser before treating them as complete.
 
 ## Agent 3 — Assets and validation
 

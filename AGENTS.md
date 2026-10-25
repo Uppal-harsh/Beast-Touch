@@ -8,4 +8,4 @@ The downloaded code and scene data in `investigation/evidence/` are research rec
 
 Coordinate scene, interface, and validation changes through the contracts in `agent.md`. Keep one persistent scene canvas; centralize navigation and transition state; ensure overlays, scroll, camera travel, and hotspot focus cannot issue competing transitions. Measure performance on named hardware rather than repeating proposed targets as measured results.
 
-Preserve existing unrelated changes. In particular, `beasttouch/app/globals.css` was untracked when these instructions were created. Check repository status before editing or committing.
+Preserve existing unrelated changes. Check repository status before editing or committing; other work may be happening in this shared workspace.
