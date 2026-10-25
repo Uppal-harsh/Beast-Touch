@@ -27,5 +27,7 @@ export type CourtCanvasProps = {
   variant: SneakerVariant;
   onSelectSneaker: (id: SneakerId) => void;
   onFocusComplete: (id: SneakerId) => void;
+  onReady?: () => void;
+  onError?: () => void;
   suspended?: boolean;
 };
