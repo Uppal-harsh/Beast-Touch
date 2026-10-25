@@ -1,77 +1,228 @@
 'use client';
+
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, Map, Menu, Minus, MoveUpRight, Plus, ShoppingBag, Volume2, VolumeX, X } from 'lucide-react';
-import gsap from 'gsap';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { ArrowDown, ArrowUpRight, Check, Menu, ShoppingBag, Volume2, VolumeX, X } from 'lucide-react';
+import { CourtBoundary } from './court/CourtBoundary';
+import { courtConfig, type SneakerId, type SneakerVariant } from './court/config';
+import { ProductDialogs, productDetails, type ProductModal, type SavedPair } from './court/ProductDialogs';
+import { useScrollProgress } from './court/useScrollProgress';
+import './court/experience.css';
 
-const CourtScene=dynamic(()=>import('./CourtScene'),{ssr:false});
-const areas=[
- {name:'The Court',eyebrow:'ROOTED IN THE EVERYDAY',title:['BORN IN','THE CHAOS.'],caption:'Indian soul. Unapologetic soles.',description:'For the lanes that raised us. And the places we’re going.',hindi:'अपना रास्ता। अपना खेल।',short:'Where it all begins.'},
- {name:'The Workshop',eyebrow:'OLD SOUL. NEW EXPRESSION.',title:['CRAFTED','TO STAND OUT.'],caption:'A little tradition. A lot of rebellion.',description:'Handloom-inspired textures meet a court-born silhouette.',hindi:'मिट्टी से। मर्ज़ी से।',short:'Get into the details.'},
- {name:'The Drop',eyebrow:'MEET YOUR NEXT CHAPTER',title:['LEAVE','YOUR MARK.'],caption:'The BT—01. First of its kind.',description:'A new sneaker story, in a colour that refuses to blend in.',hindi:'भीड़ से अलग।',short:'Find your expression.'}
+const CourtCanvas = dynamic(() => import('./court/CourtCanvas'), {
+  ssr: false,
+  loading: () => <div className="arena-loading" aria-hidden="true"><span />PREPARING THE COURT</div>,
+});
+const stops = [
+  { id: 'arena', name: 'The Court', note: 'Where it all begins.' },
+  { id: 'craft', name: 'The Craft', note: 'Get into the details.' },
+  { id: 'collection', name: 'The Lineup', note: 'Three moods. One silhouette.' },
+  { id: 'your-pair', name: 'Your Pair', note: 'Find your expression.' },
 ];
-const details=[
- {title:'A thread of home.',tag:'01 / THE TEXTILE',text:'The woven side panel takes its rhythm from Indian textiles. Geometric lines, earthy colours, and the kind of texture you want to reach out and touch.',note:'Design direction · handloom-inspired weave'},
- {title:'Soft spot. Strong character.',tag:'02 / THE MATERIAL',text:'Deep oxblood suede meets warm, chalk-toned panels. A flash of cobalt breaks the rules. The palette borrows from red earth, old walls, and electric city nights.',note:'Design direction · suede, canvas & leather'},
- {title:'Grounded. Never ordinary.',tag:'03 / THE SOLE',text:'A generous cream cupsole gives the BT—01 its grounded stance. Contrast stitching and a textured edge finish a silhouette built around everyday movement.',note:'Design direction · textured court cupsole'}
-];
-type SavedPair={size:number;color:string};
-type Modal='product'|'bag'|'story'|number|null;
-type TravelState={area:number;progress:number};
-const colors=['Oxblood','Forest','Indigo'] as const;
-function isSavedPair(value:unknown):value is SavedPair {return typeof value==='object'&&value!==null&&'size' in value&&'color' in value&&typeof value.size==='number'&&Number.isInteger(value.size)&&value.size>=5&&value.size<=12&&typeof value.color==='string'&&colors.some(color=>color===value.color)}
-function isExplored(value:unknown):value is number[] {return Array.isArray(value)&&value.every(item=>Number.isInteger(item)&&item>=0&&item<details.length)}
+const isVariant = (value: unknown): value is SneakerVariant => value === 'Oxblood' || value === 'Forest' || value === 'Indigo';
+function isSavedPair(value: unknown): value is SavedPair {
+  return typeof value === 'object' && value !== null && 'size' in value && 'color' in value && typeof value.size === 'number' && Number.isInteger(value.size) && value.size >= 5 && value.size <= 12 && isVariant(value.color);
+}
 
-function Mark({small=false}:{small?:boolean}){return <svg className={small?'brand-mark small':'brand-mark'} viewBox="0 0 40 40" aria-hidden="true"><path d="M3 8h13l-6 10h11L7 34l5-13H2L9 13H3Zm21 0h13L23 34h-9l10-16h-7l4-6h-4Z" fill="currentColor"/></svg>}
-function MiniMap({area}:{area:number}) {return <svg viewBox="0 0 100 65" aria-hidden="true"><path d="m4 32 46-25 46 25-46 25Z" fill="none" stroke="currentColor" strokeWidth="1"/><path d="m4 32 15 8 46-25M19 40l15 8L80 23M34 48l16 9 46-25" fill="none" stroke="currentColor" strokeWidth="1"/><path d={area===0?'m4 32 15 8 46-25-15-8Z':area===1?'m19 40 15 8 46-25-15-8Z':'m34 48 16 9 46-25-16-9Z'} fill="#8d332b"/><path d="M50 7v8M96 32v8L50 65 4 40v-8" fill="none" stroke="currentColor" strokeWidth="1"/></svg>}
+export default function Experience() {
+  const scrollRoot = useRef<HTMLElement>(null);
+  const overlay = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const returnSneaker = useRef<SneakerId | null>(null);
+  const audio = useRef<AudioContext | null>(null);
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingId = useRef<SneakerId | null>(null);
+  const progress = useScrollProgress(scrollRoot);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [webgl, setWebgl] = useState<boolean | null>(null);
+  const [sceneReady, setSceneReady] = useState(false);
+  const [focusedSneaker, setFocusedSneaker] = useState<SneakerId | null>(null);
+  const [focusing, setFocusing] = useState(false);
+  const [modal, setModal] = useState<ProductModal>(null);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [color, setColor] = useState<SneakerVariant>('Oxblood');
+  const [size, setSize] = useState<number | null>(null);
+  const [sizeError, setSizeError] = useState(false);
+  const [saved, setSaved] = useState<SavedPair | null>(null);
+  const [explored, setExplored] = useState<number[]>([]);
+  const [toast, setToast] = useState('');
+  const [audioOn, setAudioOn] = useState(false);
+  const overlayOpen = modal !== null || mapOpen;
+  const currentStop = Math.min(3, Math.floor(progress * 3 + 0.28));
 
-export default function Experience(){
- const [travel,setTravel]=useState<TravelState>({area:0,progress:0}),[mapOpen,setMapOpen]=useState(false),[modal,setModal]=useState<Modal>(null),[size,setSize]=useState<number|null>(null),[color,setColor]=useState('Oxblood'),[saved,setSaved]=useState<SavedPair|null>(null),[toast,setToast]=useState(''),[audioOn,setAudioOn]=useState(false),[reduced,setReduced]=useState(false),[ready,setReady]=useState(false),[explored,setExplored]=useState<number[]>([]),[sizeError,setSizeError]=useState(false);
- const content=useRef<HTMLDivElement>(null),hero=useRef<HTMLElement>(null),overlay=useRef<HTMLDivElement>(null),travelRef=useRef<TravelState>({area:0,progress:0}),touchY=useRef<number|null>(null),audio=useRef<AudioContext|null>(null),oscillators=useRef<OscillatorNode[]>([]),previousFocus=useRef<HTMLElement|null>(null);
- const area=travel.area,overlayOpen=modal!==null||mapOpen;
- const state=areas[area];
- useEffect(()=>{setReady(true);const media=matchMedia('(prefers-reduced-motion: reduce)');setReduced(media.matches);const handler=()=>setReduced(media.matches);media.addEventListener('change',handler);try{const stored=localStorage.getItem('beasttouch-pair');if(stored){const parsed:unknown=JSON.parse(stored);if(isSavedPair(parsed))setSaved(parsed)}const marks=localStorage.getItem('beasttouch-explored');if(marks){const parsed:unknown=JSON.parse(marks);if(isExplored(parsed))setExplored(Array.from(new Set(parsed)))}}catch{}return()=>{media.removeEventListener('change',handler);audio.current?.close()}},[]);
- useEffect(()=>{if(!ready)return;const ctx=gsap.context(()=>{gsap.fromTo('.scene-copy > *',{y:reduced?0:24,opacity:0},{y:0,opacity:1,duration:reduced?0:.7,stagger:reduced?0:.07,ease:'power3.out'});},content);return()=>ctx.revert()},[area,ready,reduced]);
- useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(''),3500);return()=>clearTimeout(timer)},[toast]);
- const commitTravel=useCallback((next:TravelState)=>{travelRef.current=next;setTravel(next)},[]);
- const go=useCallback((n:number)=>{commitTravel({area:((n%areas.length)+areas.length)%areas.length,progress:0});setMapOpen(false)},[commitTravel]);
- const moveTravel=useCallback((delta:number)=>{const current=travelRef.current;const absolute=Math.max(0,Math.min(areas.length,current.area+current.progress+delta));const nextArea=Math.min(areas.length-1,Math.floor(absolute));commitTravel({area:nextArea,progress:absolute-nextArea})},[commitTravel]);
- const close=useCallback(()=>{setModal(null);setMapOpen(false)},[]);
- useEffect(()=>{if(!overlayOpen)return;previousFocus.current=document.activeElement as HTMLElement;const timer=setTimeout(()=>overlay.current?.querySelector<HTMLElement>('button')?.focus(),0);const keyboard=(e:KeyboardEvent)=>{if(e.key==='Escape')close();if(e.key==='Tab'){const els=overlay.current?.querySelectorAll<HTMLElement>('button:not([disabled]),a,input,[tabindex="0"]');if(!els?.length)return;const first=els[0],last=els[els.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};document.addEventListener('keydown',keyboard);return()=>{clearTimeout(timer);document.removeEventListener('keydown',keyboard);previousFocus.current?.focus()}},[overlayOpen,close]);
- useEffect(()=>{if(modal===null)return;const timer=setTimeout(()=>overlay.current?.querySelector<HTMLElement>('button')?.focus(),0);return()=>clearTimeout(timer)},[modal]);
- useEffect(()=>{const key=(e:KeyboardEvent)=>{if(overlayOpen||e.altKey||e.ctrlKey||e.metaKey||e.target instanceof HTMLElement&&e.target.closest('button,a,input,textarea,select,[contenteditable]'))return;const next=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(next){e.preventDefault();go(travelRef.current.area+next);return}const delta=e.key==='PageDown'||e.key===' '?0.4:e.key==='PageUp'?-0.4:e.key==='ArrowDown'?0.18:e.key==='ArrowUp'?-0.18:0;if(delta){e.preventDefault();moveTravel(delta)}};document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key)},[go,moveTravel,overlayOpen]);
- const onWheel=(e:React.WheelEvent)=>{if(overlayOpen||e.target instanceof Element&&e.target.closest('button,a,input,textarea,select'))return;const pixels=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?window.innerHeight:1);if(Math.abs(pixels)<1)return;moveTravel(Math.sign(pixels)*Math.min(Math.abs(pixels)/900,.22))};
- const openDetail=(n:number)=>{setModal(n);const next=Array.from(new Set([...explored,n]));setExplored(next);try{localStorage.setItem('beasttouch-explored',JSON.stringify(next))}catch{}};
- const toggleAudio=()=>{if(audioOn){audio.current?.suspend();setAudioOn(false);return}try{if(!audio.current){audio.current=new AudioContext();const gain=audio.current.createGain();gain.gain.value=.025;gain.connect(audio.current.destination);[110,164.81,220].forEach((f,i)=>{const osc=audio.current!.createOscillator();osc.type='sine';osc.frequency.value=f;osc.detune.value=i*3;osc.connect(gain);osc.start();oscillators.current.push(osc)})}audio.current.resume();setAudioOn(true)}catch{setToast('Sound is unavailable in this browser.')}};
- const editPair=()=>{if(saved){setSize(saved.size);setColor(saved.color)}setSizeError(false);setModal('product')};
- const savePair=()=>{if(!size){setSizeError(true);return}const pair={size,color};setSaved(pair);try{localStorage.setItem('beasttouch-pair',JSON.stringify(pair))}catch{}setModal(null);setToast('Your BT—01 is saved to your bag.');};
- const removePair=()=>{setSaved(null);setSize(null);setColor('Oxblood');try{localStorage.removeItem('beasttouch-pair')}catch{}};
- return <div className="experience">
-  <header className="site-header" inert={overlayOpen}><a className="wordmark" href="#" aria-label="BeastTouch home" onClick={e=>{e.preventDefault();go(0);setModal(null)}}><Mark/><span>BEASTTOUCH<span className="registered">®</span></span></a><span className="header-manifesto">INDEPENDENT SPIRIT.<br/>INDIAN SOUL.</span><nav aria-label="Primary navigation"><button className="text-link story-link" onClick={()=>setModal('story')}>OUR STORY <ArrowUpRight size={13}/></button><button className="bag-link" onClick={()=>setModal('bag')}><ShoppingBag size={16}/><span>BAG</span><span className="bag-count">{saved?'01':'00'}</span></button><button className="menu-button" onClick={()=>setMapOpen(true)} aria-label="Open exploration menu"><Menu size={24}/></button></nav></header>
-  <main ref={content} className={`main-area area-${area}`} inert={overlayOpen}>
-   <section ref={hero} className="scene" onWheel={onWheel} onTouchStart={e=>{touchY.current=e.touches.length===1&&!(e.target instanceof Element&&e.target.closest('button,a'))?e.touches[0].clientY:null}} onTouchEnd={e=>{if(touchY.current===null||overlayOpen)return;const d=touchY.current-e.changedTouches[0].clientY;touchY.current=null;if(Math.abs(d)>30)moveTravel(Math.sign(d)*Math.min(Math.abs(d)/500,.6))}} onTouchCancel={()=>{touchY.current=null}} aria-label={`${state.name} experience`}>
-    <div className="three-scene"><CourtScene area={area} progress={travel.progress} reduced={reduced}/></div><div className="scene-shade"/><div className="grain"/>
-    <div className="scene-top"><span className="scene-index"><span className="status-dot"/> BEASTTOUCH WORLD <span className="slash">/</span> 0{area+1}</span><button className="sound-button" onClick={toggleAudio} aria-label={audioOn?'Mute ambient sound':'Play ambient sound'} aria-pressed={audioOn}>{audioOn?<Volume2 size={15}/>:<VolumeX size={15}/>}<span>SOUND {audioOn?'ON':'OFF'}</span></button></div>
-    <div className="scene-copy" key={area}><p className="eyebrow"><span className="tiny-plus">+</span> {state.eyebrow}</p><h1>{state.title[0]}<br/><span>{state.title[1]}</span></h1><p className="hero-description">{state.caption}<br/><span>{state.description}</span></p></div>
-    <div className="wall-type" aria-hidden="true">अपना<br/>मैदान</div><div className="wall-stamp" aria-hidden="true">NO RULEBOOK.<br/>JUST ROOTS.<span>EST. 2026 — IN</span></div>
-    <div className="scene-hotspots" role="group" aria-label="Explore sneaker details"><button className={`hotspot ${explored.includes(0)?'visited':''}`} onClick={()=>openDetail(0)} aria-label="Discover the woven textile"><Plus size={17}/><span>THE TEXTILE</span></button><button className={`hotspot ${explored.includes(1)?'visited':''}`} onClick={()=>openDetail(1)} aria-label="Discover the sneaker materials"><Plus size={17}/><span>THE MATERIAL</span></button><button className={`hotspot ${explored.includes(2)?'visited':''}`} onClick={()=>openDetail(2)} aria-label="Discover the court sole"><Plus size={17}/><span>THE SOLE</span></button></div>
-    <span className="vertical-note">{state.hindi}</span>
-    {area===1&&<div className="workshop-note"><span>THE PROCESS / 001</span><p>Tradition in the weave.<br/>Rebellion in the details.</p><div><span className="fabric-swatch"/><span className="suede-swatch"/><span className="rubber-swatch"/></div></div>}
-    <div className="scene-bottom"><button className="map-button" onClick={()=>setMapOpen(true)}><MiniMap area={area}/><span>EXPLORE THE SPACE <ArrowUpRight size={13}/></span></button><div className="product-label"><span className="label-kicker">THE FIRST EXPRESSION</span><div><h2>BT—01</h2><span>OXBLOOD / CHALK<br/>CONCEPT EDITION</span></div></div><button className="hero-cta" onClick={()=>setModal('product')}><span>{area===2?'FIND YOUR PAIR':'MEET THE BT—01'}</span><ArrowUpRight size={20}/></button></div>
-    <div className="scene-corner">28°36′ N &nbsp; 77°12′ E <span>NEW DELHI, INDIA</span></div>
-   </section>
-   <footer className="explore-bar"><div className="scroll-cue"><span className="scroll-icon"><ArrowDown size={14}/></span><span>SCROLL TO EXPLORE</span></div><nav aria-label="Explore spaces" className="area-tabs">{areas.map((a,i)=><button key={a.name} className={area===i?'active':''} aria-current={area===i?'page':undefined} onClick={()=>go(i)}><span className="tab-number">0{i+1}</span>{a.name}<span className="tab-indicator"/></button>)}</nav><div className="area-arrows"><span>0{area+1}<span className="muted"> / 03</span></span><button aria-label="Previous space" onClick={()=>go(area-1)}><ArrowLeft size={17}/></button><button aria-label="Next space" onClick={()=>go(area+1)}><ArrowRight size={17}/></button></div></footer>
-  </main>
-  <div className="bottom-line" inert={overlayOpen}><span>MADE OF THE STREETS.</span><span>NOT MADE TO FIT IN. <span className="orange">✳</span></span><nav className="home-legal-links" aria-label="Site links"><Link href="/about">ABOUT</Link><Link href="/contact">CONTACT</Link><Link href="/privacy">PRIVACY</Link></nav></div>
-  {mapOpen&&<div className="overlay map-overlay" ref={overlay} role="dialog" aria-modal="true" aria-label="Explore BeastTouch"><div className="overlay-heading"><span><Mark small/> THE BEASTTOUCH WORLD</span><button className="close-button" onClick={close}>CLOSE <X size={19}/></button></div><div className="map-content"><p className="eyebrow">THREE SPACES. ONE STATE OF MIND.</p>{areas.map((a,i)=><button key={a.name} className={`map-item ${i===area?'selected':''}`} onClick={()=>go(i)}><span className="map-number">0{i+1}</span><span>{a.name}</span><ArrowUpRight/><small>{a.short}</small></button>)}</div><div className="map-footer"><span>अपना रास्ता। अपना खेल।</span><span>DESIGNED TO BE DIFFERENT.</span></div></div>}
-  {modal!==null&&<div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&close()}><div ref={overlay} className={`modal ${modal==='bag'?'bag-modal':''} ${modal==='story'?'story-modal':''}`} role="dialog" aria-modal="true" aria-label={typeof modal==='number'?details[modal].title:modal==='product'?'Explore the BT—01':modal==='bag'?'Your saved bag':'Our story'}><button className="modal-close" onClick={close} aria-label="Close dialog"><X size={22}/></button>
-   {modal==='product'&&<><div className="modal-product-image"><span className="eyebrow">BEASTTOUCH / EXPRESSION 001</span><Image className={`color-${color.toLowerCase()}`} src="/images/beasttouch-01.png" alt="BT—01 concept sneaker in oxblood and chalk" width={1774} height={887} loading="lazy"/><div><span>अपना रास्ता।</span><Mark/></div></div><div className="product-config"><p className="eyebrow">THE FIRST EXPRESSION</p><h2>BT—01<span>Everyday. Your way.</span></h2><p>A court silhouette with a distinctly Indian soul. Woven details, bold contrasts, and an attitude all its own.</p><div className="config-label">COLOUR <span>{color.toUpperCase()} / CHALK</span></div><div className="color-options">{['Oxblood','Forest','Indigo'].map(c=><button key={c} aria-label={`${c} colour concept`} aria-pressed={c===color} className={`color-option ${c.toLowerCase()} ${c===color?'selected':''}`} onClick={()=>setColor(c)}>{c===color&&<Check size={16}/>}</button>)}</div><div className="config-label">SELECT SIZE <span>UK / INDIA</span></div><div className="size-options">{[5,6,7,8,9,10,11,12].map(n=><button key={n} className={size===n?'selected':''} aria-pressed={size===n} onClick={()=>{setSize(n);setSizeError(false)}}>{n}</button>)}</div>{sizeError&&<p className="size-error" role="alert">Choose a size to save your pair.</p>}<button className="primary-button" onClick={savePair}>SAVE YOUR PAIR <ArrowUpRight size={19}/></button><p className="concept-note">An original design concept, not currently for sale. Your selection is saved on this device. Colourways are visual studies.</p></div></>}
-   {typeof modal==='number'&&<><div className={`detail-image detail-${modal}`}><Image src="/images/beasttouch-01.png" alt={`BT—01 detail: ${details[modal].title}`} width={1774} height={887} loading="lazy"/><span className="detail-counter">0{modal+1} / 03</span></div><div className="detail-copy"><p className="eyebrow">{details[modal].tag}</p><h2>{details[modal].title}</h2><p>{details[modal].text}</p><span className="material-note">{details[modal].note}</span><button className="primary-button" onClick={()=>openDetail((modal+1)%3)}>NEXT DETAIL <ArrowRight size={18}/></button><span className="explored-count">{explored.length} OF 3 DETAILS EXPLORED</span></div></>}
-   {modal==='bag'&&<div className="bag-content"><p className="eyebrow">A LITTLE PIECE OF YOUR PERSONALITY.</p><h2>Your bag<span>({saved?'01':'00'})</span></h2>{saved?<><div className="bag-item"><Image className={`color-${saved.color.toLowerCase()}`} src="/images/beasttouch-01.png" alt={`Saved BT—01 in ${saved.color} and chalk`} width={1774} height={887} loading="lazy"/><div><h3>BT—01</h3><p>{saved.color} / Chalk<br/>UK {saved.size} · Concept edition</p><button onClick={removePair}>REMOVE <X size={11}/></button></div></div><div className="saved-notice"><Check size={20}/><p>Your expression, saved.<span>This concept pair stays in your bag on this device. No order or payment has been placed.</span></p></div><button className="primary-button" onClick={editPair}>EDIT YOUR PAIR <ArrowRight size={18}/></button></>:<div className="empty-bag"><ShoppingBag size={40} strokeWidth={1}/><h3>Make it yours.</h3><p>Your next expression is waiting.<br/>Find a colour. Pick a size. Save your pair.</p><button className="primary-button" onClick={editPair}>EXPLORE BT—01 <ArrowUpRight size={18}/></button></div>}</div>}
-   {modal==='story'&&<div className="story-content"><p className="eyebrow">THE BEASTTOUCH STATE OF MIND</p><h2>FROM OUR<br/>STREETS.<br/><em>TO YOUR STORY.</em></h2><div className="story-columns"><p>The last game before the streetlights come on. A chai break that turns into a plan. The colour of a city that never asks permission.</p><p>BeastTouch is an independent sneaker concept inspired by that spirit. Familiar textures. Unfamiliar combinations. A little rough around the edges. Completely our own.</p></div><span className="hindi-story">अपना रास्ता। अपना खेल।</span><button className="primary-button" onClick={()=>{setModal(null);go(1)}}>STEP INTO THE WORKSHOP <ArrowUpRight size={20}/></button></div>}
-  </div></div>}
-  {toast&&<div className="toast" role="status"><Check size={17}/>{toast}<button aria-label="Dismiss notification" onClick={()=>setToast('')}><X size={15}/></button></div>}
- </div>
+  useEffect(() => {
+    const media = matchMedia('(prefers-reduced-motion: reduce)');
+    const motion = () => setReducedMotion(media.matches);
+    motion();
+    media.addEventListener('change', motion);
+    try {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      setWebgl(!!context);
+      context?.getExtension('WEBGL_lose_context')?.loseContext();
+    } catch { setWebgl(false); }
+    try {
+      const pair: unknown = JSON.parse(localStorage.getItem('beasttouch-pair') ?? 'null');
+      if (isSavedPair(pair)) { setSaved(pair); setSize(pair.size); setColor(pair.color); }
+      const variant = localStorage.getItem('beasttouch-variant');
+      if (isVariant(variant)) setColor(variant);
+    } catch { /* Invalid persisted data is ignored. */ }
+    try {
+      const details: unknown = JSON.parse(localStorage.getItem('beasttouch-explored') ?? '[]');
+      if (Array.isArray(details) && details.every(value => Number.isInteger(value) && value >= 0 && value < 3)) setExplored([...new Set(details as number[])]);
+    } catch { /* Keep the empty collection. */ }
+    return () => { media.removeEventListener('change', motion); void audio.current?.close(); if (focusTimer.current) clearTimeout(focusTimer.current); };
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(''), 3500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const close = useCallback(() => {
+    setModal(null); setMapOpen(false); setFocusedSneaker(null); setFocusing(false); pendingId.current = null;
+    if (focusTimer.current) clearTimeout(focusTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (!overlayOpen) return;
+    if (!returnSneaker.current) previousFocus.current = document.activeElement as HTMLElement;
+    const overflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    const timer = setTimeout(() => overlay.current?.querySelector<HTMLElement>('button,a,input')?.focus(), 0);
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); close(); }
+      if (event.key !== 'Tab') return;
+      const elements = overlay.current?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input,textarea,[tabindex="0"]');
+      if (!elements?.length) return;
+      const first = elements[0], last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', keyboard);
+    return () => {
+      clearTimeout(timer); document.documentElement.style.overflow = overflow; document.removeEventListener('keydown', keyboard);
+      const id = returnSneaker.current;
+      requestAnimationFrame(() => {
+        if (previousFocus.current?.isConnected) previousFocus.current.focus({ preventScroll: true });
+        else if (id) {
+          const sneaker = courtConfig.sneakers.find(item => item.id === id);
+          const hotspot = [...document.querySelectorAll<HTMLElement>('.court-hotspot-button')].find(element => element.getAttribute('aria-label') === `Explore ${sneaker?.name}`);
+          (hotspot ?? document.querySelector<HTMLElement>(`[data-sneaker-id="${id}"]`))?.focus({ preventScroll: true });
+        }
+        returnSneaker.current = null;
+      });
+    };
+  }, [overlayOpen, close]);
+
+  useEffect(() => {
+    if (modal === null) return;
+    const timer = setTimeout(() => overlay.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    return () => clearTimeout(timer);
+  }, [modal]);
+
+  useEffect(() => {
+    if (!focusing) return;
+    const cancel = (event: KeyboardEvent) => { if (event.key === 'Escape') close(); };
+    document.addEventListener('keydown', cancel);
+    return () => document.removeEventListener('keydown', cancel);
+  }, [focusing, close]);
+
+  const go = (index: number) => {
+    setMapOpen(false);
+    document.getElementById(stops[index].id)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+  };
+  const changeColor = (variant: SneakerVariant) => {
+    setColor(variant);
+    try { localStorage.setItem('beasttouch-variant', variant); } catch { /* The choice still works in memory. */ }
+  };
+  const finishFocus = useCallback((id: SneakerId) => {
+    if (pendingId.current !== id) return;
+    if (focusTimer.current) clearTimeout(focusTimer.current);
+    pendingId.current = null; setFocusing(false); setModal('product');
+  }, []);
+  const selectSneaker = (id: SneakerId) => {
+    if (overlayOpen || focusing) return;
+    previousFocus.current = document.activeElement as HTMLElement;
+    returnSneaker.current = id;
+    const sneaker = courtConfig.sneakers.find(item => item.id === id);
+    if (sneaker) changeColor(sneaker.variant);
+    setSizeError(false); setFocusedSneaker(id); pendingId.current = id;
+    if (webgl === false || !sceneReady || reducedMotion) { finishFocus(id); return; }
+    setFocusing(true);
+    focusTimer.current = setTimeout(() => finishFocus(id), 1600);
+  };
+  const openDetail = (index: number) => {
+    setModal(index);
+    const next = [...new Set([...explored, index])]; setExplored(next);
+    try { localStorage.setItem('beasttouch-explored', JSON.stringify(next)); } catch { /* Device storage is optional. */ }
+  };
+  const editPair = () => { if (saved) { setSize(saved.size); changeColor(saved.color); } setSizeError(false); setModal('product'); };
+  const savePair = () => {
+    if (!size) { setSizeError(true); return; }
+    const pair = { size, color }; setSaved(pair);
+    try { localStorage.setItem('beasttouch-pair', JSON.stringify(pair)); } catch { /* Device storage is optional. */ }
+    close(); setToast('Your BT—01 is saved to your bag.');
+  };
+  const removePair = () => { setSaved(null); setSize(null); try { localStorage.removeItem('beasttouch-pair'); } catch { /* Keep the in-memory state. */ } };
+  const toggleAudio = async () => {
+    try {
+      if (audioOn) { await audio.current?.suspend(); setAudioOn(false); return; }
+      if (!audio.current) {
+        const context = new AudioContext(); audio.current = context;
+        const gain = context.createGain(); gain.gain.value = 0.012; gain.connect(context.destination);
+        [110, 164.81, 220].forEach(frequency => { const oscillator = context.createOscillator(); oscillator.type = 'sine'; oscillator.frequency.value = frequency; oscillator.connect(gain); oscillator.start(); });
+      }
+      await audio.current.resume(); setAudioOn(true);
+    } catch { setToast('Sound is unavailable in this browser.'); }
+  };
+  const sceneFailed = useCallback(() => { setWebgl(false); setSceneReady(false); }, []);
+  const sceneLoaded = useCallback(() => setSceneReady(true), []);
+
+  return <div className="court-experience" style={{ '--arena-accent': courtConfig.colors.accent, '--arena-blue': courtConfig.colors.secondary, '--arena-paper': courtConfig.colors.paper } as CSSProperties}>
+    <header className="arena-header" inert={overlayOpen}>
+      <a href="#arena" className="arena-wordmark" aria-label="BeastTouch home">BEASTTOUCH<span>®</span></a>
+      <span className="arena-header-note">INDEPENDENT SPIRIT.<br />INDIAN SOUL.</span>
+      <nav aria-label="Primary navigation"><Link href="/about" className="arena-about">Our story <ArrowUpRight size={12} /></Link><button onClick={() => setModal('bag')} aria-label={`Open bag, ${saved ? '1 saved pair' : 'empty'}`}><ShoppingBag size={17} /><span className="arena-bag-count">{saved ? '01' : '00'}</span></button><button onClick={() => setMapOpen(true)} aria-label="Open exploration menu"><Menu size={21} /></button></nav>
+    </header>
+
+    <main ref={scrollRoot} className="arena-scroll" inert={overlayOpen}>
+      <div className={`arena-stage ${sceneReady ? 'is-ready' : ''}`} aria-label="Interactive BeastTouch basketball court">
+        <div className="arena-poster"><Image src="/images/court-poster.svg" alt="" fill priority unoptimized sizes="100vw" /></div>
+        {webgl && <CourtBoundary onError={sceneFailed}><CourtCanvas progress={progress} reducedMotion={reducedMotion} focusedSneaker={focusedSneaker} variant={color} onSelectSneaker={selectSneaker} onFocusComplete={finishFocus} onReady={sceneLoaded} onError={sceneFailed} suspended={overlayOpen} /></CourtBoundary>}
+        <div className="arena-stage-shade" />
+        {webgl === false && <p className="arena-fallback-note">Court preview · Explore every design below</p>}
+      </div>
+
+      <section id="arena" className="arena-section arena-hero" aria-label="The Court">
+        <div className="arena-hero-copy"><p className="arena-eyebrow"><span /> THE STREETS HAVE A NEW HOME</p><h1>MADE OF<br />THE <em>STREETS.</em></h1><p className="arena-intro">Indian soul. Unapologetic soles.<br /><span>For the places that made you. And the places you’ll go.</span></p><a href="#collection" className="arena-outline-link">MEET THE BT—01 <ArrowUpRight size={18} /></a></div>
+        <div className="arena-hero-bottom"><span className="arena-coordinate">28°36′ N / 77°12′ E<br /><strong>NEW DELHI. EVERYWHERE.</strong></span><a href="#craft" className="arena-scroll-cue"><ArrowDown size={15} /><span>SCROLL TO<br />FEEL THE DIFFERENCE</span></a><span className="arena-edition">EXPRESSION 001<br /><strong>THE COURT COLLECTION</strong></span></div>
+        <span className="arena-hindi" aria-hidden="true">अपना रास्ता। अपना खेल।</span>
+      </section>
+
+      <section id="craft" className="arena-section arena-craft" aria-labelledby="craft-title">
+        <div className="arena-glass-card"><p className="arena-eyebrow">01 / ROOTS IN EVERY THREAD</p><h2 id="craft-title">OLD SOUL.<br /><em>NEW EXPRESSION.</em></h2><p>Handloom-inspired texture. Court-born attitude. Every layer of the BT—01 carries a little of where we’re from.</p><div className="arena-material-links">{productDetails.map((detail, index) => <button key={detail.tag} onClick={() => openDetail(index)}><span>0{index + 1}</span>{['The textile', 'The material', 'The sole'][index]}<ArrowUpRight size={15} /><span className="arena-visited">{explored.includes(index) ? <Check size={13} /> : '+'}</span></button>)}</div></div>
+        <span className="arena-section-watermark" aria-hidden="true">CRAFT / CULTURE</span>
+      </section>
+
+      <section id="collection" className="arena-section arena-collection" aria-labelledby="collection-title">
+        <div className="arena-collection-heading"><p className="arena-eyebrow">02 / FIND YOUR EXPRESSION</p><h2 id="collection-title">THREE MOODS.<br /><em>ONE SILHOUETTE.</em></h2><p>Tap a sneaker on the court, or choose your colour below.</p></div>
+        <div className="arena-sneaker-cards">{courtConfig.sneakers.map((sneaker, index) => <button key={sneaker.id} data-sneaker-id={sneaker.id} className={`arena-sneaker-card variant-${sneaker.variant.toLowerCase()}`} onClick={() => selectSneaker(sneaker.id)} disabled={focusing} aria-label={`Explore ${sneaker.name}, ${sneaker.variant} colourway`}><span className="arena-card-index">0{index + 1}<ArrowUpRight size={19} /></span><span className="arena-card-swatch" /><strong>{sneaker.variant}</strong><span>BT—01 / CHALK</span><small>{sneaker.label}</small></button>)}</div>
+      </section>
+
+      <section id="your-pair" className="arena-section arena-finale" aria-labelledby="pair-title"><div><p className="arena-eyebrow">03 / THE NEXT CHAPTER IS YOURS</p><h2 id="pair-title">LEAVE<br /><em>YOUR MARK.</em></h2><p>A little tradition. A lot of rebellion.<br />Choose a colour. Find your size. Make it yours.</p><button className="arena-primary-link" onClick={() => selectSneaker('origin')}>FIND YOUR PAIR <ArrowUpRight size={21} /></button><span className="arena-concept-note">An independent design concept. Not currently for sale.</span></div><Link href="/contact" className="arena-collab-link">SOMETHING IN MIND?<br /><span>LET’S MAKE IT HAPPEN <ArrowUpRight size={13} /></span></Link></section>
+    </main>
+
+    <nav className="arena-wayfinding" aria-label="Explore court sections" inert={overlayOpen}>{stops.map((stop, index) => <a href={`#${stop.id}`} key={stop.id} aria-current={currentStop === index ? 'location' : undefined}><span>0{index + 1}</span><i /><span className="arena-stop-label">{stop.name}</span></a>)}</nav>
+    <button className="arena-audio" onClick={() => void toggleAudio()} aria-label={audioOn ? 'Mute ambient sound' : 'Play ambient sound'} aria-pressed={audioOn} inert={overlayOpen}>{audioOn ? <Volume2 size={15} /> : <VolumeX size={15} />}<span>SOUND {audioOn ? 'ON' : 'OFF'}</span></button>
+    <footer className="arena-footer" inert={overlayOpen}><Link href="/" className="arena-footer-brand">BEASTTOUCH.</Link><span>MADE OF THE STREETS.</span><nav aria-label="Footer"><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link></nav></footer>
+
+    {focusing && <div className="arena-focusing" role="status">A CLOSER LOOK <span /></div>}
+    {mapOpen && <div className="overlay map-overlay" ref={overlay} role="dialog" aria-modal="true" aria-label="Explore BeastTouch"><div className="overlay-heading"><span>THE BEASTTOUCH WORLD</span><button className="close-button" onClick={close}>CLOSE <X size={19} /></button></div><div className="map-content"><p className="eyebrow">FOUR MOMENTS. ONE STATE OF MIND.</p>{stops.map((stop, index) => <button key={stop.id} className={`map-item ${index === currentStop ? 'selected' : ''}`} onClick={() => go(index)}><span className="map-number">0{index + 1}</span><span>{stop.name}</span><ArrowUpRight /><small>{stop.note}</small></button>)}</div><div className="map-footer"><span>अपना रास्ता। अपना खेल।</span><span>DESIGNED TO BE DIFFERENT.</span></div></div>}
+    <ProductDialogs modal={modal} overlayRef={overlay} close={close} color={color} setColor={changeColor} size={size} setSize={value => { setSize(value); setSizeError(false); }} sizeError={sizeError} saved={saved} explored={explored} openDetail={openDetail} savePair={savePair} removePair={removePair} editPair={editPair} goToWorkshop={() => { close(); go(1); }} />
+    {toast && <div className="toast" role="status"><Check size={17} />{toast}<button aria-label="Dismiss notification" onClick={() => setToast('')}><X size={15} /></button></div>}
+  </div>;
 }

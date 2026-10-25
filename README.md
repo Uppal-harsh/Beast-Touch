@@ -35,6 +35,16 @@ The home, About, Contact, and Privacy routes render HTML and each has one H1, a 
 
 The [privacy notice](beasttouch/app/privacy/page.tsx) describes local saved selections, contact email delivery, and optional analytics. Review it against your final business identity and data practices before launch. The [asset provenance record](beasttouch/docs/asset-provenance.md) notes that the sneaker PNG's origin and use rights are still unverified.
 
+## Court experience
+
+The home page keeps its server-rendered heading and content while `CourtCanvas` loads in the browser. Native page scrolling moves the camera along four stops; no wheel or keyboard events are cancelled. Three original procedural sneakers have keyboard-accessible hotspots and matching product buttons in the page. Selecting one flies the camera to it, then opens the product dialog. Closing returns to the current scroll position. Saved size/colour choices, visited details, and the selected colour use local storage.
+
+Court geometry, hardwood colour and normal maps, textile details, contact shadows, studio environment, and the fallback poster are authored in code. The existing unverified sneaker PNG is confined to `SneakerAsset.tsx` for product dialogs. The page shows a lightweight SVG poster before the canvas is ready and uses the same DOM content when WebGL fails.
+
+`beasttouch/components/court/config.ts` contains the palette, sneaker positions, camera stops, lighting, timings, effects and quality settings. The scene uses React Three Fiber, Drei, and lazy postprocessing. Phones/tablets and lower-capability devices start with postprocessing, reflections, and shadows disabled. `PerformanceMonitor` can downgrade desktop quality. Reduced motion removes the intro, parallax, particles, and continuous motion; offscreen or suspended scenes render on demand.
+
+Run the required type and production build checks after installing dependencies. See [the court validation record](beasttouch/docs/court-validation.md) for screenshots and measured results. Frame-rate, bundle, LCP, and CLS budgets are targets until measurements are recorded there.
+
 ## Project guidance
 
 - [Agent responsibilities](AGENTS.md)

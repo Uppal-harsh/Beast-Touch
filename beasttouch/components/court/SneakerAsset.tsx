@@ -21,6 +21,6 @@ export default function SneakerAsset({ variant = 'Oxblood', className, alt }: Pr
     alt={alt ?? `BeastTouch BT—01 sneaker, ${variant} colour concept`}
     className={className}
     style={{ filter: filters[variant] }}
-    unoptimized
+    loading="lazy"
   />;
 }

@@ -2,11 +2,11 @@
 
 ## Purpose and current state
 
-Use the public Finely Crafted investigation as inspiration for a distinct BeastTouch experience. The current `beasttouch/` Next.js app has an original React Three Fiber court and procedural 3D sneaker, three thematic areas, menus and dialogs. The sneaker PNG remains in product dialogs. The initial camera travel and 3D scene are a first pass; projected hotspots, floor reflection, bloom, full route behavior, and visual validation remain future work. The three agents below divide that work without treating public production assets as implementation inputs.
+Use the public Finely Crafted investigation as inspiration for a distinct BeastTouch experience. The home page now has an original procedural court, three sneaker models and projected hotspots under a native scrolling DOM experience. The unverified sneaker PNG is confined to `components/court/SneakerAsset.tsx` in product dialogs. Rendering code lives under `components/court/`, with shared tunables in `config.ts`; refer to `docs/court-validation.md` for the current verification status. The three roles below divide future work without treating public production assets as implementation inputs.
 
 ## Agent 1 — Scene and rendering
 
-**Owns:** `beasttouch/components/CourtScene.tsx` and any new scene, camera, material, lighting, or 3D asset modules. Independently author the court architecture, hoop and markings, sneaker mesh, materials, light design, camera poses and travel, floor reflection, bloom, projected hotspot anchors, and quality settings. Keep the canvas mounted while areas change.
+**Owns:** `beasttouch/components/court/` scene, camera, material, lighting, and 3D asset modules. Independently author the court architecture, hoop and markings, sneaker mesh, materials, light design, camera poses and travel, floor reflection, bloom, projected hotspot anchors, and quality settings. Keep the canvas mounted while sections change.
 
 **Receives from Agent 2:** area, normalized travel progress (0–1), direction, transition phase, focus target, pointer intent, and reduced-motion setting. **Emits:** projected hotspot positions and visibility, plus camera transition ready/completed events. Scene code does not own routing, wheel, touch, or global keyboard listeners.
 
@@ -18,7 +18,7 @@ Use the public Finely Crafted investigation as inspiration for a distinct BeastT
 
 **Contract with Agent 1:** send scene inputs; consume projected hotspot coordinates and completion events; pause or constrain travel while a menu, dialog, or focused hotspot is active. Keep a single owner for each input and transition. Coordinate any new hotspot data shape before either side changes it.
 
-**Current state and next gaps:** area navigation now has normalized progress and the bag validates saved data. The detail controls are screen-positioned chips, so projected 3D anchors are still needed. Sound is a generated drone. Routes and a full transition controller remain open work. Check modal focus, touch travel, and reduced motion in a running browser before treating them as complete.
+**Current state:** `useScrollProgress` observes native page scrolling and the camera owns eased travel/focus transitions. Accessible projected hotspots and DOM product buttons share one selection path. Sound is an opt-in generated drone. The bag validates saved data; dialogs keep focus and block background interaction. Check the validation record for measured behavior and remaining device gaps.
 
 ## Agent 3 — Assets and validation
 
@@ -26,7 +26,7 @@ Use the public Finely Crafted investigation as inspiration for a distinct BeastT
 
 Use the baseline screenshots at 714 × 615, 1440 × 900, and 390 × 844. Fix viewport, DPR, route/area, travel progress, camera direction, pointer, overlay, collection state, and sneaker animation time before comparing. Compare room landmarks, sneaker silhouette/materials, lighting/reflection, then UI. Record scroll, drag, map, hotspot, keyboard, real touch, and reduced-motion behavior. Profile cold/warm load, frame-time distribution, GPU resources, draw calls, and long tasks on named devices. The report's 60 fps figure is a proposed goal, not a measurement of the reference.
 
-**Setup to address:** `README.md` is only a title, no dependency lockfile is present, and dependencies were not installed at the time of this handoff. `beasttouch/app/globals.css` is untracked. Do not mistake these repository conditions for findings about the public reference.
+**Setup:** follow the root README and keep the dependency lockfile synchronized. Do not treat local dependency/network limitations as findings about the public reference.
 
 ## Shared completion rule
 

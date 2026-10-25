@@ -1,6 +1,6 @@
 'use client';
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { courtConfig, type SneakerVariant } from './config';
@@ -94,13 +94,25 @@ function makeWeave() {
 }
 
 export default function SneakerModel({ variant, highlighted = false, reducedMotion, rotation = 0 }: Props) {
+  const invalidate = useThree(state => state.invalidate);
   const model = useRef<THREE.Group>(null);
-  const accent = useRef<THREE.MeshStandardMaterial>(null);
+  const accents = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
+  const initialTint = useRef(courtConfig.variants[variant]);
   const elapsed = useRef(0);
   const parts = useMemo(makeParts, []);
   const weave = useMemo(makeWeave, []);
   const targetTint = useMemo(() => new THREE.Color(courtConfig.variants[variant]), [variant]);
   useEffect(() => () => weave.dispose(), [weave]);
+  useEffect(() => {
+    let frame = 0;
+    const until = performance.now() + 650;
+    const tick = () => {
+      invalidate();
+      if (performance.now() < until) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [variant, highlighted, invalidate]);
 
   useFrame((_, dt) => {
     const step = Math.min(dt, 0.05);
@@ -110,13 +122,14 @@ export default function SneakerModel({ variant, highlighted = false, reducedMoti
       model.current.rotation.x = reducedMotion ? 0 : Math.sin(elapsed.current * 0.75) * 0.05;
       model.current.rotation.z = reducedMotion ? -0.09 : -0.09 + Math.sin(elapsed.current * 0.58) * 0.04;
       model.current.position.y = reducedMotion ? 0 : Math.sin(elapsed.current * 0.9) * 0.035;
-      const targetScale = highlighted ? 1.08 : 1;
+      const targetScale = highlighted ? 1.06 : 1;
       const s = THREE.MathUtils.damp(model.current.scale.x, targetScale, 4.5, step);
       model.current.scale.setScalar(s);
     }
-    if (accent.current) {
-      accent.current.color.lerp(targetTint, 1 - Math.exp(-step / courtConfig.durations.tint));
-      accent.current.emissiveIntensity = THREE.MathUtils.damp(accent.current.emissiveIntensity, highlighted ? 0.1 : 0, 5, step);
+    for (const material of accents.current) {
+      if (!material) continue;
+      material.color.lerp(targetTint, 1 - Math.exp(-step / courtConfig.durations.tint));
+      material.emissiveIntensity = THREE.MathUtils.damp(material.emissiveIntensity, highlighted ? 0.1 : 0, 5, step);
     }
   });
 
@@ -130,7 +143,7 @@ export default function SneakerModel({ variant, highlighted = false, reducedMoti
       <meshStandardMaterial color="#e7ddc3" roughness={0.79} />
     </mesh>
     {[0.595, -0.595].map((z, i) => <group key={i} position={[0, 0, z]}>
-      <mesh castShadow><shapeGeometry args={[parts.panel]} /><meshStandardMaterial ref={i === 0 ? accent : undefined} color={courtConfig.variants[variant]} emissive={courtConfig.variants[variant]} emissiveIntensity={0} roughness={0.95} side={THREE.DoubleSide} /></mesh>
+      <mesh castShadow><shapeGeometry args={[parts.panel]} /><meshStandardMaterial ref={material => { accents.current[i] = material; }} color={initialTint.current} emissive={initialTint.current} emissiveIntensity={0} roughness={0.95} side={THREE.DoubleSide} /></mesh>
       <mesh position={[0, 0, i ? -0.006 : 0.006]}><shapeGeometry args={[parts.textile]} /><meshStandardMaterial map={weave} roughness={1} side={THREE.DoubleSide} /></mesh>
       <mesh position={[0, 0, i ? -0.009 : 0.009]}><shapeGeometry args={[parts.toe]} /><meshStandardMaterial color="#f0e7d0" roughness={0.82} side={THREE.DoubleSide} /></mesh>
     </group>)}
