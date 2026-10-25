@@ -1,0 +1,302 @@
+{
+  "js-1.js": {
+    "keys": [
+      "general",
+      "preloader",
+      "mainNavigation",
+      "lookbook",
+      "recipes",
+      "sweepstakes",
+      "moodboard",
+      "sneaker2018",
+      "sneaker2019",
+      "sewingMachine",
+      "swatches",
+      "exclusiveContent"
+    ],
+    "counts": {
+      "general": "object",
+      "preloader": "object",
+      "mainNavigation": "object",
+      "lookbook": "object",
+      "recipes": "object",
+      "sweepstakes": "object",
+      "moodboard": "object",
+      "sneaker2018": "object",
+      "sneaker2019": "object",
+      "sewingMachine": "object",
+      "swatches": "object",
+      "exclusiveContent": "object"
+    }
+  },
+  "js-2.js": {
+    "keys": [
+      "name",
+      "transforms",
+      "animations",
+      "materials",
+      "objects",
+      "hotspots"
+    ],
+    "counts": {
+      "name": "string",
+      "transforms": 370,
+      "animations": 3,
+      "materials": 73,
+      "objects": 251,
+      "hotspots": 0
+    },
+    "names": [
+      {
+        "name": "Main Camera",
+        "id": 31138,
+        "parentId": 31512,
+        "position": [
+          -29.2632,
+          1.5,
+          10.8294
+        ]
+      },
+      {
+        "name": "Shoe_JackDaniels",
+        "id": 31404,
+        "parentId": 30702,
+        "position": [
+          0,
+          1.37,
+          0
+        ]
+      },
+      {
+        "name": "Door_BaseballCourt",
+        "id": 31396,
+        "parentId": 31668,
+        "position": [
+          -8.5316,
+          0,
+          9.5051
+        ]
+      },
+      {
+        "name": "BasketballCourt",
+        "id": 30544,
+        "parentId": 31668,
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "CourtLine_Mid",
+        "id": -19278,
+        "parentId": 30544,
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "CourtLine_Side",
+        "id": -19280,
+        "parentId": 30544,
+        "position": [
+          0.07,
+          0.002,
+          3.7443
+        ]
+      },
+      {
+        "name": "CourtLine_Side (1)",
+        "id": 31892,
+        "parentId": 30544,
+        "position": [
+          0.07,
+          0.002,
+          3.7443
+        ]
+      },
+      {
+        "name": "Shoe_JackDaniels",
+        "id": 31524,
+        "parentId": 31930,
+        "position": [
+          -30.0779,
+          0.8685,
+          10.2078
+        ]
+      },
+      {
+        "name": "ShoeBrown2018",
+        "id": 31908,
+        "parentId": 31930,
+        "position": [
+          -19.503,
+          1.784,
+          11.768
+        ]
+      },
+      {
+        "name": "ShoeBrown",
+        "id": -20498,
+        "parentId": 31908,
+        "position": [
+          -0.0293,
+          0.0207,
+          0.0114
+        ]
+      },
+      {
+        "name": "ShoeBrown2018 (1)",
+        "id": 31672,
+        "parentId": 31930,
+        "position": [
+          -19.503,
+          1.276,
+          11.768
+        ]
+      },
+      {
+        "name": "ShoeBrown",
+        "id": -20326,
+        "parentId": 31672,
+        "position": [
+          -0.004,
+          0.0207,
+          0.006
+        ]
+      },
+      {
+        "name": "ShoeGreen2019",
+        "id": 31574,
+        "parentId": 31930,
+        "position": [
+          -18.702,
+          1.255,
+          11.747
+        ]
+      },
+      {
+        "name": "Shoegreen",
+        "id": -20224,
+        "parentId": 31574,
+        "position": [
+          0,
+          0.2106,
+          0
+        ]
+      },
+      {
+        "name": "ShoeGreen2019 (1)",
+        "id": 31772,
+        "parentId": 31930,
+        "position": [
+          -18.662,
+          0.747,
+          11.747
+        ]
+      },
+      {
+        "name": "Shoegreen",
+        "id": -20396,
+        "parentId": 31772,
+        "position": [
+          0.0378,
+          0.2106,
+          -0.0043
+        ]
+      },
+      {
+        "name": "ShoeSurgeon_Logo",
+        "id": 31736,
+        "parentId": 31930,
+        "position": [
+          -18.664,
+          2.846,
+          19.125
+        ]
+      },
+      {
+        "name": "ShoeSurgeon_Logo (1)",
+        "id": 30790,
+        "parentId": 31930,
+        "position": [
+          -32.187,
+          2.111,
+          16.399
+        ]
+      },
+      {
+        "name": "Shoe_JackDaniels (1)",
+        "id": 31316,
+        "parentId": 31930,
+        "position": [
+          -30.2898,
+          0.8608,
+          10.2852
+        ]
+      },
+      {
+        "name": "HotspotCameraPositions",
+        "id": 30962,
+        "parentId": 31512,
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "Hotspots",
+        "id": 31862,
+        "parentId": 31512,
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "animationKeys": [
+      {
+        "keys": [
+          "name",
+          "id",
+          "transformId",
+          "bones",
+          "clips"
+        ],
+        "name": "Main Camera"
+      },
+      {
+        "keys": [
+          "name",
+          "id",
+          "transformId",
+          "bones",
+          "clips"
+        ],
+        "name": "Door_left"
+      },
+      {
+        "keys": [
+          "name",
+          "id",
+          "transformId",
+          "bones",
+          "clips"
+        ],
+        "name": "Door_right"
+      }
+    ]
+  },
+  "js-3.js": {
+    "keys": [
+      "objects"
+    ],
+    "counts": {
+      "objects": 176
+    }
+  }
+}

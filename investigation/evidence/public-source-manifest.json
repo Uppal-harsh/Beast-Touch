@@ -1,0 +1,37 @@
+[
+  {
+    "name": "css-app.css",
+    "bytes": 37624,
+    "sha256": "0129806d0d537167742af8f6e52157e33088d6f63555a0edb38f4b0cbcbf4aeb"
+  },
+  {
+    "name": "css-vendors.css",
+    "bytes": 3302,
+    "sha256": "54a53d23a9ec81ff4e898074fd07ecc26269c849709f1643f7543c9b62f5afa3"
+  },
+  {
+    "name": "js-1.js",
+    "bytes": 15222,
+    "sha256": "fa6cd003cd5425352bb3966105e0f1e72d09a558bd8434242da479a7e4075889"
+  },
+  {
+    "name": "js-2.js",
+    "bytes": 9605835,
+    "sha256": "30f86faf47e3ca5969f9c1652f94051d66c38a905a4ec263670fb7ec7f26a757"
+  },
+  {
+    "name": "js-3.js",
+    "bytes": 4587203,
+    "sha256": "c8431a7ce0fb0c7183de9746b117e935ca9b4d8b93fb0077ca490da8c4ec97f6"
+  },
+  {
+    "name": "js-app.js",
+    "bytes": 618020,
+    "sha256": "a14b3c935d44946475689daf47daa55e57489d196acb41b611f270a2f15e2d9f"
+  },
+  {
+    "name": "js-vendors.js",
+    "bytes": 837502,
+    "sha256": "348d32f548a1af32df1e2080f74927c4e4951eac46f4831803ee658e44375d06"
+  }
+]
