@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
+  images: { formats: ['image/webp'] },
   async redirects() {
     return [
       { source: '/our-story', destination: '/about', statusCode: 301 },

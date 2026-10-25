@@ -16,3 +16,41 @@
 .scene-hotspots .hotspot span{position:static;opacity:1;transform:none;transition:none;bottom:auto;background:none;color:inherit;padding:0;font-size:8px;font-weight:700;letter-spacing:1px}
 .scene-hotspots .hotspot:hover span,.scene-hotspots .hotspot:focus-visible span{transform:none}
 @media(max-width:700px){.scene-hotspots{top:auto;right:18px;bottom:145px;gap:7px}.scene-hotspots .hotspot{height:29px;min-width:118px;padding:0 7px}.scene-hotspots .hotspot span{font-size:7px}}
+
+.home-legal-links{display:flex;align-items:center;justify-content:flex-end;gap:18px}
+.home-legal-links a:hover,.content-page a:hover,.not-found-page a:hover{color:var(--rust)}
+.content-page{min-height:100svh;display:flex;flex-direction:column;background:var(--paper)}
+.content-header,.content-footer{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:25px clamp(20px,5vw,72px);border-bottom:1px solid var(--line)}
+.content-header nav,.content-footer nav{display:flex;gap:25px;flex-wrap:wrap;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.content-logo{font-family:var(--display);font-size:30px;font-weight:800;font-style:italic;letter-spacing:-1px;color:var(--rust)}
+.content-main{width:min(100% - 40px,880px);margin:55px auto 90px;flex:1}
+.breadcrumbs{display:flex;align-items:center;gap:11px;color:#77736a;font-size:11px;margin-bottom:65px}
+.content-eyebrow{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--rust)}
+.content-main h1,.not-found-page h1{font-family:var(--display);font-size:clamp(64px,10vw,128px);line-height:.9;margin:20px 0 45px;text-transform:uppercase;letter-spacing:-2px}
+.content-body{max-width:680px;font-size:16px;line-height:1.8}
+.content-body p{margin:0 0 24px}
+.content-body .lead{font-family:var(--display);font-size:clamp(30px,4vw,48px);font-weight:700;line-height:1.1;color:var(--rust);margin-bottom:30px}
+.content-body h2{font-family:var(--display);font-size:30px;text-transform:uppercase;margin:44px 0 13px;line-height:1.1}
+.content-body a{text-decoration:underline;text-underline-offset:3px}
+.content-footer{border-top:1px solid var(--line);border-bottom:0;color:#77736a;font-size:10px;letter-spacing:1px}
+.contact-form{display:grid;gap:10px;margin-top:35px;max-width:580px}
+.contact-form label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.contact-form input,.contact-form textarea{width:100%;border:1px solid #b9b4a7;border-radius:0;background:#faf8f2;padding:13px 14px;margin-bottom:15px;font:inherit;color:var(--ink)}
+.contact-form textarea{resize:vertical;min-height:150px}
+.contact-form input:focus-visible,.contact-form textarea:focus-visible{outline:2px solid var(--rust);outline-offset:2px}
+.contact-form button,.privacy-control,.not-found-page a{background:var(--rust);color:var(--paper);padding:15px 24px;width:max-content;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.contact-form button:disabled{opacity:.6}
+.contact-form .form-error{color:#a62c24}
+.contact-honeypot{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.consent-banner{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:100;width:min(100% - 32px,740px);padding:20px 24px;background:#22231f;color:var(--paper);box-shadow:0 15px 60px #0008;display:flex;align-items:center;gap:25px}
+.consent-banner p{margin:0;flex:1;font-size:12px;line-height:1.6}
+.consent-banner a{text-decoration:underline}
+.consent-banner>div{display:flex;gap:9px;flex-shrink:0}
+.consent-banner button{font-size:11px;font-weight:700;padding:11px 14px;background:#ede7d9;color:var(--ink)}
+.consent-banner button:last-child{background:var(--rust);color:var(--paper)}
+.not-found-page{min-height:100svh;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:clamp(25px,8vw,110px);background:#171917;color:var(--paper)}
+.not-found-page h1{margin-bottom:20px}
+.not-found-page p{font-size:16px;line-height:1.7;max-width:500px}
+.not-found-page>div{display:flex;gap:13px;flex-wrap:wrap;margin-top:25px}
+.not-found-page a:nth-child(2){background:var(--paper);color:var(--ink)}
+@media(max-width:700px){.home-legal-links{gap:9px}.bottom-line>span:nth-child(2){display:none}.content-header,.content-footer{align-items:flex-start;flex-direction:column;padding:20px}.content-header nav,.content-footer nav{gap:16px;font-size:10px}.content-main{margin:35px auto 60px}.breadcrumbs{margin-bottom:45px}.consent-banner{display:block}.consent-banner>div{margin-top:14px;flex-wrap:wrap}.content-body{font-size:14px}}
